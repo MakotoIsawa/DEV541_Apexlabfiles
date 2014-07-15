@@ -1,0 +1,72 @@
+/**
+ * This trigger implements Universal Containers requirements for programmatic sharing,
+ * allowing hiring managers permissions on position objects depending on the stage of the 
+ * position.
+ * Other sharing rules, such as org-wide sharing permissions based on object stage, are
+ * set declaratively.
+ **/
+trigger PositionSharingTrigger on Position__c (after insert, after update) {
+/** 
+ * When a Position record is modified, make sure the sharing rules on the record match 
+ * the status fields:
+ *   If Status/sub-status = open/approved
+ *		- Hiring Manager = Edit
+ *		- All others in organization = Read
+ *	 Else
+ *		- Hiring Manager = Read
+ *		- All others in organization = No Access
+ * NOTE: Because the Hiring Manager may have been changed on an update, we need to make sure
+ *  that any sharing rules for the old Hiring Manager are removed.
+*/
+	
+	// Map of Position ID --> New Hiring Mgr Id				
+	Map<ID,ID> posIdToNewMgrIdMap = new Map<ID,ID>();			
+	// A list of records that we are accumulating to put in the database.
+	List<sObject> sharesToInsert = new List<sObject>(); 
+	
+	//TODO: Implement the following algorithm:
+	//TODO:   Loop through records that in the trigger and:
+	//TODO:     if this an update, 
+	//TODO:			if hiring manager changed
+	//TODO:             store record in a map (posIdtoNewMgrIdMap) with key = position record id, value = new hiring manager id
+	//TODO:		 if this is insert or the status or substatus of the record has changed or the hiring manager has changed
+	//TODO:         create a Position__share record for the hiring manager, setting common fields: 
+	//TODO:				parentId to id of current position (the object on which share is being set)
+	//TODO:				userOrGroupId to the hiring manager (the user for who is being given access)
+	//TODO:				rowCause to Schema.Position__Share.RowCause.Hiring_Manager__c
+	//TODO:         if Status/sub-status = open/approved
+	//TODO:		   		set accessLevel field of the Position__share record to the string value Edit
+	//TODO:      	else
+	//TODO:         	set accessLevel field of the Position__share record to the string value Read
+	//TODO:         add the Position__Share record to the sharestToInsert list
+	for (Position__c position:Trigger.new){
+		// Only worried about change in hiring manager if record is updated.
+		if (Trigger.isUpdate){
+			//Build the Map	of Hiring Manager changes
+			if(position.Hiring_Manager__c != Trigger.oldMap.get(position.Id).Hiring_Manager__c){
+				posIdToNewMgrIdMap.put(position.Id,position.Hiring_Manager__c);
+			}			
+		}
+		//Create new share object if needed
+		if (Trigger.isInsert 
+             || position.Status__c != Trigger.oldMap.get(position.Id).Status__c 
+             || position.Sub_Status__c != Trigger.oldMap.get(position.Id).Sub_Status__c
+             || position.Hiring_Manager__c != Trigger.oldMap.get(position.Id).Hiring_Manager__c) {
+     		Position__Share positionShare = new Position__Share(parentId = position.Id
+                                                 , userOrGroupId = position.Hiring_Manager__c
+                                                 , rowCause = Schema.Position__Share.RowCause.Hiring_Manager__c);
+			if ((position.Status__c == 'Open') && (position.Sub_Status__c=='Approved')){
+				positionShare.accesslevel = 'Edit';                                         
+			} else {
+				positionShare.accesslevel = 'Read';
+	       }
+	       sharesToInsert.add(positionShare);
+		}
+	}
+
+	if (posIdToNewMgrIdMap!=null && posIdToNewMgrIdMap.size() > 0 ) {
+		PositionSharingClass.deletePositionSharingByRowCause(posIdToNewMgrIdMap, 'Hiring_Manager__c');		
+	}
+	// Insert the new share objects in the DB 
+	Database.insert(sharesToInsert);		
+}

@@ -1,0 +1,10 @@
+for (Job_Application__c curJobApp: [Select j.Position__r.Name, j.Position__c, j.Name__c From Job_Application__c j]) {
+	System.debug('position: ' + curJobApp.Position__r.name + ' applicant name: ' + curJobApp.Name__c);
+}
+
+
+for (Position__c curPosition: [Select p.Name, (Select Name__c From Job_Applications__r) From Position__c p]) {
+	for (Job_Application__c curJobApp: curPosition.Job_Applications__r) {
+		System.debug('position: ' + curPosition.Name + ' applicant name: ' + curJobApp.Name__c);
+	}
+}

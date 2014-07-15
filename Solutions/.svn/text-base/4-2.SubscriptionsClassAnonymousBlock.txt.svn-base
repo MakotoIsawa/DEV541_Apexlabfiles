@@ -1,0 +1,5 @@
+List<Position__c> positions =[SELECT id, Hiring_manager__c FROM Position__c WHERE name='SW Engineer'];
+System.debug('TEST - number of items in positions = ' + positions.size());
+System.debug('TEST - number of items in EntitySubscription for Position = ' +[SELECT count(id) FROM EntitySubscription WHERE parentID in :positions] );
+SubscriptionsClass.HiringManagerSubscribeNewPosition(positions);
+System.debug('TEST - number of items in EntitySubscription for Position = ' +[SELECT count(id) FROM EntitySubscription WHERE parentID in :positions] );

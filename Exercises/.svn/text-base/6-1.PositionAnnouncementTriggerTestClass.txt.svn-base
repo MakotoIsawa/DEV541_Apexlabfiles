@@ -1,0 +1,15 @@
+/**
+ * This class contains unit tests for validating the behavior of the PositionAnnouncementTrigger
+ */
+@isTest
+private class PositionAnnouncementTriggerTestClass {
+	//verifyPost: Verify that chatter messages are posted when positions have the status Open/Approved
+	//TODO: Create the outline for a test method called verifyPost
+	//TODO: In the body of verifyPost, put the code you used to test the PositionAnnouncementTrigger
+	//TODO:   that is found in the file 5-3.TestPositionAnnouncment.txt
+
+
+	//verifyNotPost: Verify that chatter messages are NOT posted when positions do not have the status Open/Approved
+	//TODO: Create the test method called verifyNotPost to fulfull the requirements described in the comment above	
+
+}
